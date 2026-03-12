@@ -1,0 +1,210 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="DB25_Mk3_Linux.Views.MainWindow"
+        Width="900" Height="800"
+        Background="#1E1E1E"
+        Title="DB25 Mk3 Linux">
+
+    <Border Background="#1E1E1E" Padding="20">
+        <StackPanel Spacing="20">
+
+            <!-- ========================= -->
+            <!--  TOP CONNECTION BAR       -->
+            <!-- ========================= -->
+            <Border Background="#252526" Padding="15" CornerRadius="6">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+
+                    <ComboBox x:Name="comboBoxPorts"
+                              Width="150"
+                              Background="#1E1E1E"
+                              Foreground="White"/>
+
+                    <Button x:Name="buttonRefresh"
+                            Content="Refresh"
+                            Width="100"
+                            Background="#3A3A3D"
+                            Foreground="White"/>
+
+                    <Button x:Name="buttonConnect"
+                            Content="Connect"
+                            Width="100"
+                            Background="#007ACC"
+                            Foreground="White"/>
+
+                    <Button x:Name="LightFlash"
+                            Content="Test Flash"
+                            Width="120"
+                            Background="#3A3A3D"
+                            Foreground="White"/>
+
+                    <TextBlock x:Name="labelStatus"
+                               Text="Disconnected"
+                               Foreground="Red"
+                               Margin="20,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="16"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ========================= -->
+            <!--  DB25 PIN GRID            -->
+            <!-- ========================= -->
+<Border Background="#252526" Padding="15" CornerRadius="6">
+    <StackPanel>
+        <TextBlock Text="DB25 Pin Control"
+                   Foreground="White"
+                   FontSize="20"
+                   Margin="0,0,0,10"/>
+
+        <Grid ColumnDefinitions="Auto Auto Auto Auto Auto Auto Auto Auto Auto Auto Auto Auto Auto"
+              RowDefinitions="Auto Auto"
+              Margin="10">
+
+            <!-- Row 1: Pins 1–13 -->
+            <Border Grid.Row="0" Grid.Column="0"  ToolTip.Tip="DC_POWER (Input)"><CheckBox x:Name="checkBox1"  Content="1"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="1"  ToolTip.Tip="FWD_POWER (Input)"><CheckBox x:Name="checkBox2"  Content="2"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="2"  ToolTip.Tip="OVER_TEMP (Input)"><CheckBox x:Name="checkBox3"  Content="3"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="3"  ToolTip.Tip="OVER_DUTY (Input)"><CheckBox x:Name="checkBox4"  Content="4"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="4"  ToolTip.Tip="Not Connected"><CheckBox x:Name="checkBox5"  Content="5"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="5"  ToolTip.Tip="REFL_POWER_LIMIT (Input)"><CheckBox x:Name="checkBox6"  Content="6"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="6"  ToolTip.Tip="VFWD (Input)"><CheckBox x:Name="checkBox7"  Content="7"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="7"  ToolTip.Tip="VREFL (Input)"><CheckBox x:Name="checkBox8"  Content="8"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="8"  ToolTip.Tip="FAULT (Input)"><CheckBox x:Name="checkBox9"  Content="9"  IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="9"  ToolTip.Tip="TRG_GT_SELECT (Input)"><CheckBox x:Name="checkBox10" Content="10" IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="10" ToolTip.Tip="SHUTDOWN_STATUS (Input)"><CheckBox x:Name="checkBox11" Content="11" IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="11" ToolTip.Tip="ADDRESS_SELECTED (Input)"><CheckBox x:Name="checkBox12" Content="12" IsEnabled="False"/></Border>
+            <Border Grid.Row="0" Grid.Column="12" ToolTip.Tip="ADDR3 (Output)"><CheckBox x:Name="checkBox13" Content="13" IsEnabled="True"/></Border>
+
+            <!-- Row 2: Pins 14–25 -->
+            <Border Grid.Row="1" Grid.Column="0"  ToolTip.Tip="ENABLE_STATUS (Input)"><CheckBox x:Name="checkBox14" Content="14" IsEnabled="False"/></Border>
+            <Border Grid.Row="1" Grid.Column="1"  ToolTip.Tip="MISMATCH (Input)"><CheckBox x:Name="checkBox15" Content="15" IsEnabled="False"/></Border>
+            <Border Grid.Row="1" Grid.Column="2"  ToolTip.Tip="PTT_IN (Output)"><CheckBox x:Name="checkBox16" Content="16" IsEnabled="True"/></Border>
+            <Border Grid.Row="1" Grid.Column="3"  ToolTip.Tip="SYSLINK (Input)"><CheckBox x:Name="checkBox17" Content="17" IsEnabled="False"/></Border>
+            <Border Grid.Row="1" Grid.Column="4"  ToolTip.Tip="AUX 5V (Input)"><CheckBox x:Name="checkBox18" Content="18" IsEnabled="False"/></Border>
+            <Border Grid.Row="1" Grid.Column="5"  ToolTip.Tip="SHUTDOWN (Output)"><CheckBox x:Name="checkBox19" Content="19" IsEnabled="True"/></Border>
+            <Border Grid.Row="1" Grid.Column="6"  ToolTip.Tip="GATE_IN (Output)"><CheckBox x:Name="checkBox20" Content="20" IsEnabled="True"/></Border>
+            <Border Grid.Row="1" Grid.Column="7"  ToolTip.Tip="GND (Not Controllable)"><CheckBox x:Name="checkBox21" Content="21" IsEnabled="False"/></Border>
+            <Border Grid.Row="1" Grid.Column="8"  ToolTip.Tip="PSU_ADJUST (Output)"><CheckBox x:Name="checkBox22" Content="22" IsEnabled="True"/></Border>
+            <Border Grid.Row="1" Grid.Column="9"  ToolTip.Tip="ADDR0 (Output)"><CheckBox x:Name="checkBox23" Content="23" IsEnabled="True"/></Border>
+            <Border Grid.Row="1" Grid.Column="10" ToolTip.Tip="ADDR1 (Output)"><CheckBox x:Name="checkBox24" Content="24" IsEnabled="True"/></Border>
+            <Border Grid.Row="1" Grid.Column="11" ToolTip.Tip="ADDR2 (Output)"><CheckBox x:Name="checkBox25" Content="25" IsEnabled="True"/></Border>
+
+        </Grid>
+    </StackPanel>
+</Border>
+
+
+
+            <!-- ========================= -->
+            <!-- GAIN CONTROL PANEL        -->
+            <!-- ========================= -->
+            <Border Background="#252526" Padding="15" CornerRadius="6">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Gain Adjust Control"
+                               Foreground="White"
+                               FontSize="20"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <NumericUpDown x:Name="numericUpDown1"
+                                       Minimum="0"
+                                       Maximum="255"
+                                       Value="50"
+                                       Width="120"
+                                       Background="#1E1E1E"
+                                       Foreground="White"/>
+
+                        <Button x:Name="Gain_adjust_button"
+                                Content="Adjust Gain"
+                                Width="120"
+                                Background="#007ACC"
+                                Foreground="White"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ========================= -->
+            <!--  PULSE CONTROL PANEL      -->
+            <!-- ========================= -->
+            <Border Background="#252526" Padding="15" CornerRadius="6">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Pulse Control"
+                               Foreground="White"
+                               FontSize="20"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="20">
+
+                        <StackPanel>
+                            <TextBlock Text="Pulse ON (ms)"
+                                       Foreground="White"/>
+                            <NumericUpDown x:Name="numericPulseOn"
+                                           Minimum="1"
+                                           Maximum="100"
+                                           Value="1"
+                                           Width="120"
+                                           Background="#1E1E1E"
+                                           Foreground="White"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Pulse OFF (ms)"
+                                       Foreground="White"/>
+                            <NumericUpDown x:Name="numericPulseOff"
+                                           Minimum="1"
+                                           Maximum="1000"
+                                           Value="4"
+                                           Width="120"
+                                           Background="#1E1E1E"
+                                           Foreground="White"/>
+                        </StackPanel>
+
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                        <Button x:Name="buttonStartPulse"
+                                Content="Start Pulse"
+                                Width="120"
+                                Background="#007ACC"
+                                Foreground="White"/>
+
+                        <Button x:Name="buttonStopPulse"
+                                Content="Stop Pulse"
+                                Width="120"
+                                Background="#3A3A3D"
+                                Foreground="White"/>
+
+                        <TextBlock x:Name="labelPulseStatus"
+                                   Text="Pulse: Stopped"
+                                   Foreground="Red"
+                                   VerticalAlignment="Center"
+                                   Margin="20,0,0,0"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+
+            <!-- ========================= -->
+            <!-- PACKET READINGS PANEL     -->
+            <!-- ========================= -->
+            <Border Background="#252526" Padding="15" CornerRadius="6">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Packet Readings"
+                               Foreground="White"
+                               FontSize="20"/>
+
+                    <TextBlock x:Name="labelInputPacket"
+                               Text="IN: Null/No Read"
+                               Foreground="#CCCCCC"/>
+
+                    <TextBlock x:Name="labelOutputPacket"
+                               Text="OUT: Null/No Read"
+                               Foreground="#CCCCCC"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </Border>
+
+</Window>
