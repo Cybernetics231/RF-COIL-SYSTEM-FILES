@@ -85,6 +85,10 @@ namespace DB25_Mk3_Linux.Views
             numericPulseOn.Value = 1;
             numericPulseOff.Value = 4;
 
+            // *** REMOVE UPPER LIMIT ON PULSE DURATIONS ***
+            numericPulseOn.Maximum = int.MaxValue;
+            numericPulseOff.Maximum = int.MaxValue;
+
             // SERIAL PORT SETUP
             serialPort1.BaudRate = 57600;
             serialPort1.DataReceived += SerialPort1_DataReceived;
@@ -98,11 +102,49 @@ namespace DB25_Mk3_Linux.Views
 
             RefreshPorts();
             UpdateStatus(false);
+            ClearWarning();
         }
 
         private void DisableInput(CheckBox cb)
         {
             cb.IsEnabled = false;
+        }
+
+        // ============================
+        // WARNING HANDLING
+        // ============================
+        private void ShowWarning(string message)
+        {
+            labelWarning.Text = "⚠️ " + message;
+            labelWarning.Foreground = Avalonia.Media.Brushes.Orange;
+        }
+
+        private void ClearWarning()
+        {
+            labelWarning.Text = "";
+        }
+
+        private void RecoverFromError(string errorMessage)
+        {
+            // Stop any ongoing pulse
+            try
+            {
+                if (serialPort1.IsOpen)
+                {
+                    SendRawCommand("PULSE STOP");
+                }
+            }
+            catch { /* ignore */ }
+
+            // Re-initialize outputs (like at startup)
+            InitializeOutputs();
+
+            // Reset UI pulse status
+            labelPulseStatus.Text = "Pulse: Stopped";
+            labelPulseStatus.Foreground = Avalonia.Media.Brushes.Red;
+
+            // Show warning
+            ShowWarning("UNSAFE PRACTICE, PROGRAM RESET - " + errorMessage);
         }
 
         // ============================
@@ -142,19 +184,20 @@ namespace DB25_Mk3_Linux.Views
                 serialPort1.PortName = comboBoxPorts.SelectedItem.ToString();
                 serialPort1.Open();
 
-                // NEW: Initialize output pins to known state
+                // Initialize output pins to known state
                 InitializeOutputs();
 
                 uiTimer.Start();
                 UpdateStatus(true);
+                ClearWarning();
             }
-            catch
+            catch (Exception ex)
             {
                 UpdateStatus(false);
                 uiTimer.Stop();
+                ShowWarning("Connection failed: " + ex.Message);
             }
         }
-
 
         private void InitializeOutputs()
         {
@@ -163,16 +206,23 @@ namespace DB25_Mk3_Linux.Views
             // Prevent feedback from packet updates
             updatingFromPacket = true;
 
-            // Set all output pins to default state
-            // Pin 19 (SHUTDOWN) = HIGH, all others LOW
-            SendRawCommand("SET 13 0");   // ADDR3
-            SendRawCommand("SET 16 0");   // PTT_IN
-            SendRawCommand("SET 19 1");   // SHUTDOWN (HIGH)
-            SendRawCommand("SET 20 0");   // GATE_IN
-            SendRawCommand("SET 22 0");   // PSU_ADJUST
-            SendRawCommand("SET 23 0");   // ADDR0
-            SendRawCommand("SET 24 0");   // ADDR1
-            SendRawCommand("SET 25 0");   // ADDR2
+            try
+            {
+                // Set all output pins to default state
+                // Pin 19 (SHUTDOWN) = HIGH, all others LOW
+                SendRawCommand("SET 13 0");   // ADDR3
+                SendRawCommand("SET 16 0");   // PTT_IN
+                SendRawCommand("SET 19 1");   // SHUTDOWN (HIGH)
+                SendRawCommand("SET 20 0");   // GATE_IN
+                SendRawCommand("SET 22 0");   // PSU_ADJUST
+                SendRawCommand("SET 23 0");   // ADDR0
+                SendRawCommand("SET 24 0");   // ADDR1
+                SendRawCommand("SET 25 0");   // ADDR2
+            }
+            catch (Exception ex)
+            {
+                ShowWarning("Output init failed: " + ex.Message);
+            }
 
             // Update GUI checkboxes to match
             checkBox13.IsChecked = false;
@@ -186,6 +236,7 @@ namespace DB25_Mk3_Linux.Views
 
             updatingFromPacket = false;
         }
+
         private void UpdateStatus(bool connected)
         {
             labelStatus.Text = connected ? "Connected" : "Disconnected";
@@ -204,15 +255,23 @@ namespace DB25_Mk3_Linux.Views
 
             flashing = !flashing;
 
-            if (flashing)
+            try
             {
-                SendRawCommand("F");
-                LightFlash.Content = "Stop Flashing";
+                if (flashing)
+                {
+                    SendRawCommand("F");
+                    LightFlash.Content = "Light off";
+                }
+                else
+                {
+                    SendRawCommand("S");
+                    LightFlash.Content = "Light on";
+                }
+                ClearWarning();
             }
-            else
+            catch (Exception ex)
             {
-                SendRawCommand("S");
-                LightFlash.Content = "Test Flash";
+                RecoverFromError("Flash error: " + ex.Message);
             }
         }
 
@@ -224,43 +283,49 @@ namespace DB25_Mk3_Linux.Views
             if (!serialPort1.IsOpen)
                 return;
 
-            int gainValue = (int)numericUpDown1.Value;
-            SendRawCommand($"GAIN {gainValue}");
+            try
+            {
+                int gainValue = (int)numericUpDown1.Value;
+                SendRawCommand($"GAIN {gainValue}");
+                ClearWarning();
+            }
+            catch (Exception ex)
+            {
+                RecoverFromError("Gain error: " + ex.Message);
+            }
         }
 
         // ============================
         // PULSE CONTROL
         // ============================
+        private int ClampPulseValue(int value)
+        {
+            return value < 1 ? 1 : value;
+        }
+
         private void buttonStartPulse_Click(object? sender, RoutedEventArgs e)
         {
             if (!serialPort1.IsOpen)
                 return;
 
-            int onMs = (int)numericPulseOn.Value;
-            int offMs = (int)numericPulseOff.Value;
-
-            if (onMs < 1) onMs = 1;
-            if (offMs < 1) offMs = 1;
-
-            if (onMs > 100)
+            try
             {
-                labelPulseStatus.Text = "Pulse ON > 100 ms";
-                labelPulseStatus.Foreground = Avalonia.Media.Brushes.Red;
-                return;
-            }
+                int onMs = ClampPulseValue((int)numericPulseOn.Value);
+                int offMs = ClampPulseValue((int)numericPulseOff.Value);
 
-            double duty = onMs / (double)(onMs + offMs);
-            if (duty > 0.20)
+                // Update the numeric controls to reflect clamped values
+                numericPulseOn.Value = onMs;
+                numericPulseOff.Value = offMs;
+
+                SendRawCommand($"PULSE {onMs} {offMs}");
+                labelPulseStatus.Text = "Pulse: Running";
+                labelPulseStatus.Foreground = Avalonia.Media.Brushes.LimeGreen;
+                ClearWarning();
+            }
+            catch (Exception ex)
             {
-                labelPulseStatus.Text = "Duty > 20%";
-                labelPulseStatus.Foreground = Avalonia.Media.Brushes.Red;
-                return;
+                RecoverFromError("Pulse start error: " + ex.Message);
             }
-
-            // Always send updated values, even if pulse is already running
-            SendRawCommand($"PULSE {onMs} {offMs}");
-            labelPulseStatus.Text = "Pulse: Running";
-            labelPulseStatus.Foreground = Avalonia.Media.Brushes.LimeGreen;
         }
 
         private void buttonStopPulse_Click(object? sender, RoutedEventArgs e)
@@ -268,9 +333,17 @@ namespace DB25_Mk3_Linux.Views
             if (!serialPort1.IsOpen)
                 return;
 
-            SendRawCommand("PULSE STOP");
-            labelPulseStatus.Text = "Pulse: Stopped";
-            labelPulseStatus.Foreground = Avalonia.Media.Brushes.Red;
+            try
+            {
+                SendRawCommand("PULSE STOP");
+                labelPulseStatus.Text = "Pulse: Stopped";
+                labelPulseStatus.Foreground = Avalonia.Media.Brushes.Red;
+                ClearWarning();
+            }
+            catch (Exception ex)
+            {
+                RecoverFromError("Pulse stop error: " + ex.Message);
+            }
         }
 
         private void UpdatePulseIfRunning()
@@ -281,17 +354,23 @@ namespace DB25_Mk3_Linux.Views
             if (!labelPulseStatus.Text.Contains("Running"))
                 return;
 
-            int onMs = (int)numericPulseOn.Value;
-            int offMs = (int)numericPulseOff.Value;
+            try
+            {
+                int onMs = ClampPulseValue((int)numericPulseOn.Value);
+                int offMs = ClampPulseValue((int)numericPulseOff.Value);
 
-            if (onMs < 1) onMs = 1;
-            if (offMs < 1) offMs = 1;
+                // Update the numeric controls to reflect clamped values (in case they were invalid)
+                numericPulseOn.Value = onMs;
+                numericPulseOff.Value = offMs;
 
-            double duty = onMs / (double)(onMs + offMs);
-            if (duty > 0.20)
-                return; // silently ignore invalid live update
-
-            SendRawCommand($"PULSE {onMs} {offMs}");
+                SendRawCommand($"PULSE {onMs} {offMs}");
+                ClearWarning();
+            }
+            catch (Exception ex)
+            {
+                // If updating pulse fails, recover
+                RecoverFromError("Pulse update error: " + ex.Message);
+            }
         }
 
         // ============================
@@ -324,7 +403,15 @@ namespace DB25_Mk3_Linux.Views
             pingCounter++;
             if (pingCounter >= 10)
             {
-                SendRawCommand("PING");
+                try
+                {
+                    SendRawCommand("PING");
+                }
+                catch
+                {
+                    // If ping fails, we might be disconnected; but we don't recover automatically here
+                    // to avoid constant recovery loops. The status will show disconnected later.
+                }
                 pingCounter = 0;
             }
 
@@ -358,7 +445,6 @@ namespace DB25_Mk3_Linux.Views
             SetPinState(checkBox18, 18, v[14]); // AUX (pin18)
 
             updatingFromPacket = false;
-
         }
 
         private void SetPinState(CheckBox cb, int pinNumber, string value)
@@ -380,21 +466,24 @@ namespace DB25_Mk3_Linux.Views
             if (updatingFromPacket) return;
             if (!serialPort1.IsOpen) return;
 
-            int val = state ? 1 : 0;
-            SendRawCommand($"SET {pin} {val}");
+            try
+            {
+                int val = state ? 1 : 0;
+                SendRawCommand($"SET {pin} {val}");
+                ClearWarning();
+            }
+            catch (Exception ex)
+            {
+                RecoverFromError($"Pin {pin} error: " + ex.Message);
+            }
         }
 
         private void SendRawCommand(string cmd)
         {
-            try
-            {
-                if (serialPort1.IsOpen)
-                    serialPort1.WriteLine(cmd);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Serial write error: " + ex.Message);
-            }
+            if (!serialPort1.IsOpen)
+                throw new InvalidOperationException("Serial port not open");
+
+            serialPort1.WriteLine(cmd);
         }
     }
 }
