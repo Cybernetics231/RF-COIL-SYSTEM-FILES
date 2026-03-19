@@ -15,12 +15,12 @@
 
 #define ENABLE_STATUS 14
 #define MISMATCH 15
-#define PTT_IN 16
+#define PTT_IN 20
 #define SYSLINK 17
 
 #define AUX 18             // <-- INPUT
 #define SHUTDOWN 19
-#define GATE_IN 20
+#define GATE_IN 16
 #define GND 21
 #define PSU_ADJUST 22
 #define ADDR0 23
@@ -222,9 +222,9 @@ Serial.println();
   Serial.print(currentGain); Serial.print(","); //5
 
   Serial.print(digitalRead(ADDR3)); Serial.print(","); //13
-  Serial.print(digitalRead(PTT_IN)); Serial.print(","); //18
-  Serial.print(digitalRead(SHUTDOWN)); Serial.print(","); //19
   Serial.print(digitalRead(GATE_IN)); Serial.print(","); //22
+  Serial.print(digitalRead(SHUTDOWN)); Serial.print(","); //19
+  Serial.print(digitalRead(PTT_IN)); Serial.print(","); //18
   Serial.print(digitalRead(PSU_ADJUST)); Serial.print(","); //23
   Serial.print(digitalRead(ADDR0)); Serial.print(","); //24
   Serial.print(digitalRead(ADDR1)); Serial.print(","); //25
